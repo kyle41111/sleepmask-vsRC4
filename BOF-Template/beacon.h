@@ -179,7 +179,7 @@ typedef struct {
 	char* ptr;
 	size_t size;
 } HEAP_RECORD;
-#define MASK_SIZE 13
+#define MASK_SIZE 16
 
 /*
  *  version               - The version of the beacon dll was added for release 4.10

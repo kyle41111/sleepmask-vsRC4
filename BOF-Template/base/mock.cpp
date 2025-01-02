@@ -19,28 +19,29 @@ extern "C" {
 
 #include "mock.h"
 
+
 namespace bof {
     namespace utils {
         template <typename T>
         T swapEndianness(T value) {
-            char *ptr = reinterpret_cast<char *>(&value);
+            char* ptr = reinterpret_cast<char*>(&value);
             std::reverse(ptr, ptr + sizeof(T));
             return value;
         }
 
         template <typename T>
         std::vector<char> toBytes(T input) {
-            char *ptr = reinterpret_cast<char *>(&input);
+            char* ptr = reinterpret_cast<char*>(&input);
             return std::vector<char>(ptr, ptr + sizeof(T));
         }
 
         const char* typeToStr(int callbackType) {
             switch (callbackType) {
-                case CALLBACK_OUTPUT: return "CALLBACK_OUTPUT";
-                case CALLBACK_OUTPUT_OEM: return "CALLBACK_OUTPUT_OEM";
-                case CALLBACK_ERROR: return "CALLBACK_ERROR";
-                case CALLBACK_OUTPUT_UTF8: return "CALLBACK_OUTPUT_UTF8";
-                default: return "CALLBACK_UNKOWN";
+            case CALLBACK_OUTPUT: return "CALLBACK_OUTPUT";
+            case CALLBACK_OUTPUT_OEM: return "CALLBACK_OUTPUT_OEM";
+            case CALLBACK_ERROR: return "CALLBACK_ERROR";
+            case CALLBACK_OUTPUT_UTF8: return "CALLBACK_OUTPUT_UTF8";
+            default: return "CALLBACK_UNKOWN";
             }
         }
     }
@@ -48,22 +49,22 @@ namespace bof {
     namespace mock {
         static BEACON_INFO beaconInfo = { 0 };
 
-        char *BofData::get() {
-            return size() > 0 ? reinterpret_cast<char *>(&data[0]) : nullptr;
+        char* BofData::get() {
+            return size() > 0 ? reinterpret_cast<char*>(&data[0]) : nullptr;
         }
 
         int BofData::size() {
             return data.size();
         }
 
-        void BofData::addData(const char *buf, std::size_t len) {
+        void BofData::addData(const char* buf, std::size_t len) {
             std::vector<char> bytes;
             bytes.assign(buf, buf + len);
             insert(static_cast<int>(len));
             append(bytes);
         }
 
-        void BofData::append(const std::vector<char> &data) {
+        void BofData::append(const std::vector<char>& data) {
             this->data.insert(std::end(this->data), std::begin(data), std::end(data));
         }
 
@@ -83,12 +84,12 @@ namespace bof {
             insert(static_cast<short>(v));
         }
 
-        void BofData::insert(const char *v) {
+        void BofData::insert(const char* v) {
             addData(v, std::strlen(v) + 1);
         }
 
-        void BofData::insert(const wchar_t *v) {
-            addData((const char *)v, (std::wcslen(v) + 1) * sizeof(wchar_t));
+        void BofData::insert(const wchar_t* v) {
+            addData((const char*)v, (std::wcslen(v) + 1) * sizeof(wchar_t));
         }
 
         void BofData::insert(const std::vector<char>& data) {
@@ -123,38 +124,38 @@ namespace bof {
                 HANDLE hFile = INVALID_HANDLE_VALUE;
 
                 switch (stage.allocator) {
-                    case bof::profile::Allocator::HeapAlloc: {
-                        // For heap allocator we don't honor the .stage.userwx flag
-                        *initialPermission = PAGE_EXECUTE_READWRITE;
-                        hHeap = HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, 0, 0);
-                        assert(hHeap != NULL && "Could not create the heap");
-                        info.AllocationBase = HeapAlloc(hHeap, 0, size);
-                        info.Type = MEM_PRIVATE;
-                        info.CleanupInformation.AllocationMethod = METHOD_HEAPALLOC;
-                        info.CleanupInformation.AdditionalCleanupInformation.HeapAllocInfo.HeapHandle = hHeap;
-                        info.CleanupInformation.AdditionalCleanupInformation.HeapAllocInfo.DestroyHeap = TRUE;
-                        break;
-                    }
-                    case bof::profile::Allocator::MapViewOfFile: {
-                        hFile = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE, 0, size, NULL);
-                        assert(hFile != NULL && "Could not create file mapping");
-                        info.AllocationBase = MapViewOfFile(hFile, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, 0, 0);
-                        info.Type = MEM_MAPPED;
-                        info.CleanupInformation.AllocationMethod = METHOD_NTMAPVIEW;
-                        CloseHandle(hFile);
+                case bof::profile::Allocator::HeapAlloc: {
+                    // For heap allocator we don't honor the .stage.userwx flag
+                    *initialPermission = PAGE_EXECUTE_READWRITE;
+                    hHeap = HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, 0, 0);
+                    assert(hHeap != NULL && "Could not create the heap");
+                    info.AllocationBase = HeapAlloc(hHeap, 0, size);
+                    info.Type = MEM_PRIVATE;
+                    info.CleanupInformation.AllocationMethod = METHOD_HEAPALLOC;
+                    info.CleanupInformation.AdditionalCleanupInformation.HeapAllocInfo.HeapHandle = hHeap;
+                    info.CleanupInformation.AdditionalCleanupInformation.HeapAllocInfo.DestroyHeap = TRUE;
+                    break;
+                }
+                case bof::profile::Allocator::MapViewOfFile: {
+                    hFile = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_EXECUTE_READWRITE, 0, size, NULL);
+                    assert(hFile != NULL && "Could not create file mapping");
+                    info.AllocationBase = MapViewOfFile(hFile, FILE_MAP_ALL_ACCESS | FILE_MAP_EXECUTE, 0, 0, 0);
+                    info.Type = MEM_MAPPED;
+                    info.CleanupInformation.AllocationMethod = METHOD_NTMAPVIEW;
+                    CloseHandle(hFile);
 
-                        DWORD old = 0;
-                        if (!VirtualProtect(info.AllocationBase, size, *initialPermission, &old)) {
-                            assert(false && "Could not set the initial memory permission for the Beacon memory");
-                        }
-                        break;
+                    DWORD old = 0;
+                    if (!VirtualProtect(info.AllocationBase, size, *initialPermission, &old)) {
+                        assert(false && "Could not set the initial memory permission for the Beacon memory");
                     }
-                    case bof::profile::Allocator::VirtualAlloc: {
-                        info.AllocationBase = VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, *initialPermission);
-                        info.Type = MEM_PRIVATE;
-                        info.CleanupInformation.AllocationMethod = METHOD_VIRTUALALLOC;
-                        break;
-                    }
+                    break;
+                }
+                case bof::profile::Allocator::VirtualAlloc: {
+                    info.AllocationBase = VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, *initialPermission);
+                    info.Type = MEM_PRIVATE;
+                    info.CleanupInformation.AllocationMethod = METHOD_VIRTUALALLOC;
+                    break;
+                }
                 }
             }
             else {
@@ -251,6 +252,7 @@ namespace bof {
             for (size_t i = 0; i < numberOfHeapRecords; ++i) {
                 info.heap_records[i].ptr = new char[512];
                 info.heap_records[i].size = 512;
+                memset((void*)info.heap_records[i].ptr, 'a', 512);
                 assert(info.heap_records[i].ptr != nullptr && "Could not allocate a heap record");
             }
             info.heap_records[numberOfHeapRecords].ptr = NULL;
@@ -389,7 +391,7 @@ namespace bof {
         return runMockedSleepMask(sleepMaskFunc, bof::profile::defaultStage);
     }
 
-    std::vector<bof::output::OutputEntry> runMockedBeaconGate(SLEEPMASK_FUNC sleepMaskFunc, PFUNCTION_CALL functionCall, const bof::profile::Stage& stage) { 
+    std::vector<bof::output::OutputEntry> runMockedBeaconGate(SLEEPMASK_FUNC sleepMaskFunc, PFUNCTION_CALL functionCall, const bof::profile::Stage& stage) {
         SLEEPMASK_INFO sleepmaskInfo = {
             .version = bof::CsVersion,
             .reason = BEACON_GATE,
@@ -410,7 +412,7 @@ namespace bof {
 extern "C"
 {
     // Print API
-    void BeaconPrintf(int type, const char *fmt, ...) {
+    void BeaconPrintf(int type, const char* fmt, ...) {
         printf("[Output Callback: %s (0x%X)]\n", bof::utils::typeToStr(type), type);
         va_list args;
         va_start(args, fmt);
@@ -426,40 +428,40 @@ extern "C"
         va_end(args);
     }
 
-    void BeaconOutput(int type, const char *data, int len) {
+    void BeaconOutput(int type, const char* data, int len) {
         bof::output::addEntry(type, data, len);
         printf("[Output Callback: %s (0x%X)]\n%.*s", bof::utils::typeToStr(type), type, len, data);
     }
 
     // Parser API
-    void BeaconDataParse(datap *parser, char *buffer, int size) {
+    void BeaconDataParse(datap* parser, char* buffer, int size) {
         parser->buffer = buffer;
         parser->original = buffer;
         parser->size = size;
         parser->length = size;
     }
 
-    int BeaconDataInt(datap *parser) {
-        int value = *(int *)(parser->buffer);
+    int BeaconDataInt(datap* parser) {
+        int value = *(int*)(parser->buffer);
         parser->buffer += sizeof(int);
         parser->length -= sizeof(int);
         return bof::utils::swapEndianness(value);
     }
 
-    short BeaconDataShort(datap *parser) {
-        short value = *(short *)(parser->buffer);
+    short BeaconDataShort(datap* parser) {
+        short value = *(short*)(parser->buffer);
         parser->buffer += sizeof(short);
         parser->length -= sizeof(short);
         return bof::utils::swapEndianness(value);
     }
 
-    int BeaconDataLength(datap *parser) {
+    int BeaconDataLength(datap* parser) {
         return parser->length;
     }
 
-    char *BeaconDataExtract(datap *parser, int *size) {
+    char* BeaconDataExtract(datap* parser, int* size) {
         int size_im = BeaconDataInt(parser);
-        char *buff = parser->buffer;
+        char* buff = parser->buffer;
         parser->buffer += size_im;
         if (size)
         {
@@ -469,29 +471,29 @@ extern "C"
     }
 
     // Format API
-    void BeaconFormatAlloc(formatp *format, int maxsz) {
+    void BeaconFormatAlloc(formatp* format, int maxsz) {
         format->original = new char[maxsz];
         format->buffer = format->original;
         format->length = maxsz;
         format->size = maxsz;
     }
 
-    void BeaconFormatReset(formatp *format) {
+    void BeaconFormatReset(formatp* format) {
         format->buffer = format->original;
         format->length = format->size;
     }
 
-    void BeaconFormatFree(formatp *format) {
+    void BeaconFormatFree(formatp* format) {
         delete[] format->original;
     }
 
-    void BeaconFormatAppend(formatp *format, const char *text, int len) {
+    void BeaconFormatAppend(formatp* format, const char* text, int len) {
         memcpy(format->buffer, text, len);
         format->buffer += len;
         format->length -= len;
     }
 
-    void BeaconFormatPrintf(formatp *format, const char *fmt, ...) {
+    void BeaconFormatPrintf(formatp* format, const char* fmt, ...) {
         va_list args;
         va_start(args, fmt);
         int len = vsprintf_s(format->buffer, format->length, fmt, args);
@@ -500,7 +502,7 @@ extern "C"
         va_end(args);
     }
 
-    char *BeaconFormatToString(formatp *format, int *size) {
+    char* BeaconFormatToString(formatp* format, int* size) {
         if (size)
         {
             *size = format->size - format->length;
@@ -508,9 +510,9 @@ extern "C"
         return format->original;
     }
 
-    void BeaconFormatInt(formatp *format, int value) {
+    void BeaconFormatInt(formatp* format, int value) {
         value = bof::utils::swapEndianness(value);
-        BeaconFormatAppend(format, (char *)&value, 4);
+        BeaconFormatAppend(format, (char*)&value, 4);
     }
 
     // Internal API
@@ -528,30 +530,30 @@ extern "C"
         return FALSE;
     }
 
-    void BeaconGetSpawnTo(BOOL x86, char *buffer, int length) {
+    void BeaconGetSpawnTo(BOOL x86, char* buffer, int length) {
         std::cerr << "Not implemented: " << __FUNCTION__ << std::endl;
     }
 
-    void BeaconInjectProcess(HANDLE hProc, int pid, char *payload,
-                             int p_len, int p_offset, char *arg,
-                             int a_len)
+    void BeaconInjectProcess(HANDLE hProc, int pid, char* payload,
+        int p_len, int p_offset, char* arg,
+        int a_len)
     {
         std::cerr << "Not implemented: " << __FUNCTION__ << std::endl;
     }
 
-    void BeaconInjectTemporaryProcess(PROCESS_INFORMATION *pInfo,
-                                      char *payload, int p_len,
-                                      int p_offset, char *arg,
-                                      int a_len)
+    void BeaconInjectTemporaryProcess(PROCESS_INFORMATION* pInfo,
+        char* payload, int p_len,
+        int p_offset, char* arg,
+        int a_len)
     {
         std::cerr << "Not implemented: " << __FUNCTION__ << std::endl;
     }
 
-    void BeaconCleanupProcess(PROCESS_INFORMATION *pInfo) {
+    void BeaconCleanupProcess(PROCESS_INFORMATION* pInfo) {
         std::cerr << "Not implemented: " << __FUNCTION__ << std::endl;
     }
 
-    BOOL toWideChar(char *src, wchar_t *dst, int max) {
+    BOOL toWideChar(char* src, wchar_t* dst, int max) {
         std::string str = src;
         std::wstring wstr(str.begin(), str.end());
 

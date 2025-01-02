@@ -1,5 +1,9 @@
 # Sleepmask-VS
 
+RC4 POC with the sleepmask-vs kit
+![image](https://github.com/user-attachments/assets/7a6c77a4-1bb1-45e8-8869-b22f5f90ff90)
+
+
 This repository contains Sleepmask-VS, a simple Sleepmask example that can be used as a template to develop custom Sleepmask BOFs.
 Sleepmask-VS was built using the Beacon Object File Visual Studio template ([BOF-VS](https://github.com/Cobalt-Strike/bof-vs)).
 This repository will grow over time to provide additional Sleepmask/BeaconGate examples.
@@ -73,6 +77,8 @@ VirtualFree((LPVOID)functionCall.retValue, 0, MEM_RELEASE);
 ```
 
 Note: In this example we also free the memory created by BeaconGate.
+
+
 
 ### Release
 

@@ -6,7 +6,9 @@ This repository will grow over time to provide additional Sleepmask/BeaconGate e
 
 
 RC4 POC with the sleepmask-vs kit
-![image](https://github.com/user-attachments/assets/7a6c77a4-1bb1-45e8-8869-b22f5f90ff90)
+
+![image](https://github.com/user-attachments/assets/828f5be1-4e06-4d65-980b-55548e02666d)
+
 
 
 
